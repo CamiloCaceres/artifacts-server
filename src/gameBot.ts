@@ -42,12 +42,19 @@ export class GameBot extends EventEmitter {
     iron: { x: 1, y: 7 },
     spruce_tree: { x: 2, y: 6 },
     shrimp: { x: 5, y: 2 },
+    birch_tree: { x: 3, y: 5 },
+    coal: { x: 1, y: 6 },
   };
 
   private static readonly CRAFTING_LOCATIONS: Record<string, Position> = {
     bank: { x: 4, y: 1 },
     woodcutting: { x: -2, y: -3 },
     mining: { x: 1, y: 5 },
+    jewelry: { x: 1, y: 3 },
+    gearcrafting: { x: 3, y: 1 },
+    weaponcrafting: { x: 2, y: 1 },
+    cooking: { x: 1, y: 1 },
+    alchemy: { x: 2, y: 3 },
   };
 
   constructor(config: BotConfig) {

@@ -48,7 +48,7 @@ export interface CraftingStep {
   type: "withdraw" | "deposit" | "craft" | "move";
   item?: string;
   quantity?: number;
-  location?: "bank" | "woodcutting" | "mining";
+  location?: "bank" | "woodcutting" | "mining" | "jewelry" | "gearcrafting" | "weaponcrafting" | "cooking" | "alchemy";
   position?: Position;
   materialsUsed?: Map<string, number>;
   itemsCrafted?: Map<string, number>;
