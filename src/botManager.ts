@@ -1,12 +1,12 @@
 // server/botManager.ts
-import { EventEmitter } from 'events';
-import { BotConfig, BotStatus } from './types';
-import { GameBot } from './gameBot';
+import { EventEmitter } from "events";
+import { BotConfig, BotStatus } from "./types";
+import { GameBot } from "./gameBot";
 
 interface LogEntry {
-    characterName: string;
-    message: string;
-    timestamp: string;
+  characterName: string;
+  message: string;
+  timestamp: string;
 }
 
 export class GameBotManager extends EventEmitter {
@@ -26,37 +26,57 @@ export class GameBotManager extends EventEmitter {
   private initializeBots() {
     const defaultConfigs: BotConfig[] = [
       { characterName: "Psy", actionType: "fight", apiToken: this.apiToken },
-      { characterName: "Atlas", actionType: "gather", resource: "iron", apiToken: this.apiToken },
-      { characterName: "Shiva", actionType: "gather", resource: "copper", apiToken: this.apiToken },
-      { characterName: "Yoga", actionType: "gather", resource: "ash_tree", apiToken: this.apiToken },
-      { characterName: "Shakti", actionType: "gather", resource: "spruce_tree", apiToken: this.apiToken }
+      {
+        characterName: "Atlas",
+        actionType: "gather",
+        resource: "iron",
+        apiToken: this.apiToken,
+      },
+      {
+        characterName: "Shiva",
+        actionType: "gather",
+        resource: "copper",
+        apiToken: this.apiToken,
+      },
+      {
+        characterName: "Yoga",
+        actionType: "gather",
+        resource: "ash_tree",
+        apiToken: this.apiToken,
+      },
+      {
+        characterName: "Shakti",
+        actionType: "gather",
+        resource: "spruce_tree",
+        apiToken: this.apiToken,
+      },
     ];
 
-    defaultConfigs.forEach(config => {
+    defaultConfigs.forEach((config) => {
       this.createBot(config);
     });
   }
 
   private createBot(config: BotConfig) {
     const bot = new GameBot(config);
-    
-    bot.on('statusUpdate', (status: BotStatus) => {
+
+    bot.on("statusUpdate", (status: BotStatus) => {
       this.botsStatus.set(config.characterName, status);
-      this.emit('statusUpdate', {
+      this.emit("statusUpdate", {
         characterName: config.characterName,
-        status
+        status,
       });
     });
 
-    bot.on('log', (message: string) => {
+    bot.on("log", (message: string) => {
       const logEntry = {
         characterName: config.characterName,
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       this.addLog(logEntry);
-      this.emit('log', logEntry);
+      this.emit("log", logEntry);
     });
 
     this.bots.set(config.characterName, bot);
@@ -82,11 +102,14 @@ export class GameBotManager extends EventEmitter {
       this.stopBot(characterName);
     }
 
-    // Update config
+    // Handle crafting cycle updates
     const updatedConfig = {
       ...currentConfig,
       ...newConfig,
-      apiToken: this.apiToken // Ensure API token remains unchanged
+      apiToken: this.apiToken, // Ensure API token remains unchanged
+      craftingCycle: newConfig.craftingCycle
+        ? { ...newConfig.craftingCycle } // Deep copy the crafting cycle
+        : undefined,
     };
 
     // Remove old bot instance
@@ -101,9 +124,9 @@ export class GameBotManager extends EventEmitter {
       this.startBot(characterName);
     }
 
-    this.emit('configUpdate', {
+    this.emit("configUpdate", {
       characterName,
-      config: updatedConfig
+      config: updatedConfig,
     });
   }
 
@@ -114,7 +137,7 @@ export class GameBotManager extends EventEmitter {
   public getAllConfigs(): Record<string, BotConfig> {
     const configs: Record<string, BotConfig> = {};
     this.botsConfig.forEach((config, characterName) => {
-      configs[characterName] = config;
+      configs[characterName] = { ...config }; // Create a copy to avoid direct references
     });
     return configs;
   }
@@ -137,8 +160,8 @@ export class GameBotManager extends EventEmitter {
       bot.start();
       this.addLog({
         characterName,
-        message: 'Bot started',
-        timestamp: new Date().toISOString()
+        message: "Bot started",
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -149,8 +172,8 @@ export class GameBotManager extends EventEmitter {
       bot.stop();
       this.addLog({
         characterName,
-        message: 'Bot stopped',
-        timestamp: new Date().toISOString()
+        message: "Bot stopped",
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -160,8 +183,8 @@ export class GameBotManager extends EventEmitter {
       bot.start();
       this.addLog({
         characterName,
-        message: 'Bot started (mass start)',
-        timestamp: new Date().toISOString()
+        message: "Bot started (mass start)",
+        timestamp: new Date().toISOString(),
       });
     });
   }
@@ -171,8 +194,8 @@ export class GameBotManager extends EventEmitter {
       bot.stop();
       this.addLog({
         characterName,
-        message: 'Bot stopped (mass stop)',
-        timestamp: new Date().toISOString()
+        message: "Bot stopped (mass stop)",
+        timestamp: new Date().toISOString(),
       });
     });
   }
@@ -184,7 +207,18 @@ export class GameBotManager extends EventEmitter {
   public getBotsStatus(): Record<string, BotStatus> {
     const status: Record<string, BotStatus> = {};
     this.botsStatus.forEach((botStatus, characterName) => {
-      status[characterName] = botStatus;
+      // Create a deep copy of the status to avoid reference issues
+      status[characterName] = {
+        ...botStatus,
+        itemsCollected: new Map(botStatus.itemsCollected),
+        craftingStats: botStatus.craftingStats
+          ? {
+              ...botStatus.craftingStats,
+              itemsCrafted: new Map(botStatus.craftingStats.itemsCrafted),
+              materialsUsed: new Map(botStatus.craftingStats.materialsUsed),
+            }
+          : undefined,
+      };
     });
     return status;
   }
