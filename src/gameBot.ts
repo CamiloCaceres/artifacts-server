@@ -112,38 +112,58 @@ export class GameBot extends EventEmitter {
   private async processFightResults(data: any) {
     if (!data.fight) return;
 
-    this.updateStatus({
-      totalActions: this.status.totalActions + 1,
-      totalXp: this.status.totalXp + data.fight.xp,
-      totalGold: this.status.totalGold + data.fight.gold,
-    });
+    const xpGained = data.fight.xp;
+    const goldGained = data.fight.gold;
+    let dropSummary = "";
 
     if (data.fight.drops) {
       const itemsCollected = new Map(this.status.itemsCollected);
-      data.fight.drops.forEach((drop: Item) => {
-        const current = itemsCollected.get(drop.code) || 0;
-        itemsCollected.set(drop.code, current + drop.quantity);
-      });
-      this.updateStatus({ itemsCollected });
+      dropSummary = data.fight.drops
+        .map((drop: Item) => {
+          const current = itemsCollected.get(drop.code) || 0;
+          itemsCollected.set(drop.code, current + drop.quantity);
+          return `${drop.quantity}x ${drop.code}`;
+        })
+        .join(", ");
     }
-  }
-
-  private async processGatherResults(data: any) {
-    if (!data.details) return;
 
     this.updateStatus({
       totalActions: this.status.totalActions + 1,
-      totalXp: this.status.totalXp + data.details.xp,
+      totalXp: this.status.totalXp + xpGained,
+      totalGold: this.status.totalGold + goldGained,
+      itemsCollected: new Map(this.status.itemsCollected),
     });
+
+    this.log(
+      `Fight completed: +${xpGained} XP, +${goldGained} gold${
+        dropSummary ? `, Drops: ${dropSummary}` : ""
+      }`
+    );
+  }
+  private async processGatherResults(data: any) {
+    if (!data.details) return;
+
+    const xpGained = data.details.xp;
+    let itemSummary = "";
 
     if (data.details.items) {
       const itemsCollected = new Map(this.status.itemsCollected);
-      data.details.items.forEach((item: Item) => {
-        const current = itemsCollected.get(item.code) || 0;
-        itemsCollected.set(item.code, current + item.quantity);
-      });
-      this.updateStatus({ itemsCollected });
+      itemSummary = data.details.items
+        .map((item: Item) => {
+          const current = itemsCollected.get(item.code) || 0;
+          itemsCollected.set(item.code, current + item.quantity);
+          return `${item.quantity}x ${item.code}`;
+        })
+        .join(", ");
     }
+
+    this.updateStatus({
+      totalActions: this.status.totalActions + 1,
+      totalXp: this.status.totalXp + xpGained,
+      itemsCollected: new Map(this.status.itemsCollected),
+    });
+
+    this.log(`Gathered: ${itemSummary}${xpGained ? `, +${xpGained} XP` : ""}`);
   }
 
   private async executeCraftingStep(
