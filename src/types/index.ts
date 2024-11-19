@@ -29,6 +29,9 @@ export interface BotConfig {
   resource?: string;
   baseUrl?: string;
   craftingCycle?: CraftingCycle;
+  fightLocation?: Position;
+  selectedMonster?: string; // Store the monster code instead of coordinates
+  monsterSkin?: string; // Store the skin for UI purposes
 }
 
 export interface BotStatus {
@@ -83,3 +86,21 @@ export type ResourceType =
   | "shrimp"
   | "coal"
   | "birch";
+
+  export interface Monster {
+    name: string;
+    skin: string;
+    x: number;
+    y: number;
+    content: {
+      type: "monster";
+      code: string;
+    };
+  }
+  
+  export interface MonsterLocation {
+    code: string;
+    skin: string;
+    position: Position;
+  }
+  

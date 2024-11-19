@@ -9,6 +9,7 @@ import {
   CraftingStats,
 } from "./types";
 import { APIClient } from "./apiClient";
+import { MonsterService } from "./services/monsterService";
 
 export class GameBot extends EventEmitter {
   private config: BotConfig;
@@ -57,10 +58,13 @@ export class GameBot extends EventEmitter {
     alchemy: { x: 2, y: 3 },
   };
 
+  private monsterService: MonsterService;
+
   constructor(config: BotConfig) {
     super();
     this.config = config;
     this.api = new APIClient(config.apiToken);
+    this.monsterService = MonsterService.getInstance();
   }
 
   private log(message: string) {
@@ -376,6 +380,29 @@ export class GameBot extends EventEmitter {
   }
 
   private async performMainAction(): Promise<void> {
+    if (this.config.actionType === "fight" && this.config.fightLocation) {
+      const characters = await this.api.getCharacters();
+      const character = characters.data.find(
+        (c) => c.name === this.config.characterName
+      );
+
+      if (character && this.config.selectedMonster) {
+        const monsterLocation = this.monsterService.getMonsterPosition(
+          this.config.selectedMonster,
+          this.config.monsterSkin
+        );
+
+        if (monsterLocation) {
+          await this.move(monsterLocation.position, character);
+        } else {
+          this.log(
+            `Error: Could not find position for monster ${this.config.selectedMonster}`
+          );
+          return;
+        }
+      }
+    }
+
     const result: any =
       this.config.actionType === "fight"
         ? await this.api.fight(this.config.characterName)
