@@ -1,9 +1,10 @@
-// server/index.ts
+// src/index.ts
 import express from "express";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import { GameBotManager } from "./botManager";
 import { MonsterService } from "./services/monsterService";
+import { ResourceService } from "./services/resourceService";
 import { config } from "dotenv";
 import { CraftingCycle } from "./types";
 
@@ -11,11 +12,17 @@ config(); // Load environment variables
 
 async function startServer() {
   try {
-    // Initialize monster service first
-    console.log("Initializing monster service...");
+    // Initialize services first
+    console.log("Initializing services...");
     const monsterService = MonsterService.getInstance();
-    await monsterService.initialize();
-    console.log("Monster service initialized successfully");
+    const resourceService = ResourceService.getInstance();
+    
+    await Promise.all([
+      monsterService.initialize(),
+      resourceService.initialize()
+    ]);
+    
+    console.log("Services initialized successfully");
 
     const app = express();
     const httpServer = createServer(app);
@@ -29,7 +36,7 @@ async function startServer() {
       },
     });
 
-    // Initialize bot manager after monster service is ready
+    // Initialize bot manager after services are ready
     const botManager = new GameBotManager(process.env.API_TOKEN!);
 
     // Track connected clients
@@ -40,12 +47,13 @@ async function startServer() {
       connectedClients.add(socket.id);
       console.log("Client connected");
 
-      // Send initial state including configurations and monster list
+      // Send initial state including configurations, monsters, and resources
       socket.emit("initialState", {
         botsStatus: botManager.getBotsStatus(),
         botsConfig: botManager.getAllConfigs(),
         recentLogs: botManager.getRecentLogs(50),
         monsters: monsterService.getAllMonsters(),
+        resources: resourceService.getAllResources(),
       });
 
       // Bot Control Events
@@ -79,6 +87,12 @@ async function startServer() {
       socket.on("getMonsterLocations", (monsterCode: string) => {
         const locations = monsterService.getMonstersByCode(monsterCode);
         socket.emit("monsterLocations", { code: monsterCode, locations });
+      });
+
+      // Resource Events
+      socket.on("getResourceLocations", (resourceCode: string) => {
+        const locations = resourceService.getResourcesByCode(resourceCode);
+        socket.emit("resourceLocations", { code: resourceCode, locations });
       });
 
       // Configuration Events

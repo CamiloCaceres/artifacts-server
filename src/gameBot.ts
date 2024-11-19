@@ -10,6 +10,7 @@ import {
 } from "./types";
 import { APIClient } from "./apiClient";
 import { MonsterService } from "./services/monsterService";
+import { ResourceService } from "./services/resourceService";
 
 export class GameBot extends EventEmitter {
   private config: BotConfig;
@@ -35,18 +36,6 @@ export class GameBot extends EventEmitter {
     },
   };
 
-  private static readonly RESOURCE_POSITIONS: Record<string, Position> = {
-    copper: { x: 2, y: 0 },
-    ash_tree: { x: -1, y: 0 },
-    sunflower: { x: 2, y: 2 },
-    gudgeon: { x: 4, y: 2 },
-    iron: { x: 1, y: 7 },
-    spruce_tree: { x: 2, y: 6 },
-    shrimp: { x: 5, y: 2 },
-    birch_tree: { x: 3, y: 5 },
-    coal: { x: 1, y: 6 },
-  };
-
   private static readonly CRAFTING_LOCATIONS: Record<string, Position> = {
     bank: { x: 4, y: 1 },
     woodcutting: { x: -2, y: -3 },
@@ -59,12 +48,14 @@ export class GameBot extends EventEmitter {
   };
 
   private monsterService: MonsterService;
+  private resourceService: ResourceService;
 
   constructor(config: BotConfig) {
     super();
     this.config = config;
     this.api = new APIClient(config.apiToken);
     this.monsterService = MonsterService.getInstance();
+    this.resourceService = ResourceService.getInstance();
   }
 
   private log(message: string) {
@@ -352,14 +343,29 @@ export class GameBot extends EventEmitter {
   }
 
   private async moveToResource(character: Character): Promise<void> {
-    if (!this.config.resource) return;
+    if (!this.config.resource) {
+      throw new Error("No resource type configured");
+    }
 
-    const targetPos = GameBot.RESOURCE_POSITIONS[this.config.resource];
-    if (!targetPos) {
+    let resourceLocation;
+    if (this.config.resourceSkin) {
+      // If a specific skin is selected, use that location
+      resourceLocation = this.resourceService.getResourcePosition(
+        this.config.resource,
+        this.config.resourceSkin
+      );
+    } else {
+      // Otherwise, get the first available location
+      resourceLocation = this.resourceService.getResourcePosition(
+        this.config.resource
+      );
+    }
+
+    if (!resourceLocation) {
       throw new Error(`Invalid resource type: ${this.config.resource}`);
     }
 
-    await this.move(targetPos, character);
+    await this.move(resourceLocation.position, character);
   }
 
   private async rest(character: Character): Promise<void> {
@@ -378,15 +384,14 @@ export class GameBot extends EventEmitter {
       }
     }
   }
-
   private async performMainAction(): Promise<void> {
-    if (this.config.actionType === "fight" && this.config.fightLocation) {
+    if (this.config.actionType === "fight" && this.config.selectedMonster) {
       const characters = await this.api.getCharacters();
       const character = characters.data.find(
         (c) => c.name === this.config.characterName
       );
 
-      if (character && this.config.selectedMonster) {
+      if (character) {
         const monsterLocation = this.monsterService.getMonsterPosition(
           this.config.selectedMonster,
           this.config.monsterSkin
@@ -398,6 +403,20 @@ export class GameBot extends EventEmitter {
           this.log(
             `Error: Could not find position for monster ${this.config.selectedMonster}`
           );
+          return;
+        }
+      }
+    } else if (this.config.actionType === "gather" && this.config.resource) {
+      const characters = await this.api.getCharacters();
+      const character = characters.data.find(
+        (c) => c.name === this.config.characterName
+      );
+
+      if (character) {
+        try {
+          await this.moveToResource(character);
+        } catch (error) {
+          this.log(`Error: ${error instanceof Error ? error.message : String(error)}`);
           return;
         }
       }

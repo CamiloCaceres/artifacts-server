@@ -1,3 +1,4 @@
+// src/types/index.ts
 export interface Character {
   name: string;
   hp: number;
@@ -27,11 +28,12 @@ export interface BotConfig {
   characterName: string;
   actionType: "fight" | "gather" | "craft";
   resource?: string;
+  resourceSkin?: string;  // Added for resource skin selection
   baseUrl?: string;
   craftingCycle?: CraftingCycle;
   fightLocation?: Position;
-  selectedMonster?: string; // Store the monster code instead of coordinates
-  monsterSkin?: string; // Store the skin for UI purposes
+  selectedMonster?: string;
+  monsterSkin?: string;
 }
 
 export interface BotStatus {
@@ -75,32 +77,40 @@ export interface CraftingStats {
   materialsUsed: Map<string, number>;
 }
 
-// Resource positions type safety
-export type ResourceType =
-  | "copper"
-  | "ash_tree"
-  | "sunflower"
-  | "gudgeon"
-  | "iron"
-  | "spruce_tree"
-  | "shrimp"
-  | "coal"
-  | "birch";
-
-  export interface Monster {
-    name: string;
-    skin: string;
-    x: number;
-    y: number;
-    content: {
-      type: "monster";
-      code: string;
-    };
-  }
-  
-  export interface MonsterLocation {
+// Resource-related interfaces
+export interface Resource {
+  name: string;
+  skin: string;
+  x: number;
+  y: number;
+  content: {
+    type: "resource";
     code: string;
-    skin: string;
-    position: Position;
-  }
-  
+  };
+}
+
+export interface ResourceLocation {
+  code: string;
+  skin: string;
+  position: Position;
+  name: string;
+}
+
+// Monster-related interfaces
+export interface Monster {
+  name: string;
+  skin: string;
+  x: number;
+  y: number;
+  content: {
+    type: "monster";
+    code: string;
+  };
+}
+
+export interface MonsterLocation {
+  code: string;
+  skin: string;
+  position: Position;
+}
+
