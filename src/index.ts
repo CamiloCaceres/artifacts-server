@@ -36,7 +36,7 @@ async function startServer() {
       cors: {
         origin: [
           "http://localhost:3000",
-          "https://artifacts.camilocaceres.com",
+          "https://artifacts.caceresdev.com",
         ],
         methods: ["GET", "POST"],
       },
