@@ -25,6 +25,12 @@ async function startServer() {
     console.log("Services initialized successfully");
 
     const app = express();
+    
+    // Health check endpoint
+    app.get("/health", (req, res) => {
+      res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
+    });
+    
     const httpServer = createServer(app);
     const io = new Server(httpServer, {
       cors: {
@@ -176,7 +182,7 @@ async function startServer() {
       io.emit("botConfigUpdate", update);
     });
 
-    const PORT = process.env.PORT || 3001;
+    const PORT = process.env.PORT || 3021;
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
