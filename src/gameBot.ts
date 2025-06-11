@@ -217,6 +217,7 @@ export class GameBot extends EventEmitter {
 
         case "craft":
           if (!step.item || !step.quantity) return false;
+          this.log(`Attempting to craft ${step.quantity}x ${step.item}`);
           const craftResult: any = await this.api.craft(
             this.config.characterName,
             {
@@ -238,9 +239,14 @@ export class GameBot extends EventEmitter {
         case "move":
           if (step.location) {
             const position = GameBot.CRAFTING_LOCATIONS[step.location];
-            if (!position) return false;
+            if (!position) {
+              this.log(`Invalid location: ${step.location}`);
+              return false;
+            }
+            this.log(`Moving to ${step.location} at position (${position.x}, ${position.y})`);
             await this.move(position, character);
           } else if (step.position) {
+            this.log(`Moving to custom position (${step.position.x}, ${step.position.y})`);
             await this.move(step.position, character);
           }
           break;

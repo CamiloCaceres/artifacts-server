@@ -170,7 +170,10 @@ The server exposes a Socket.IO interface for real-time communication:
 
 This bot interacts with the following ArtifactsMMO API endpoints:
 
-- `GET /my/characters` - Retrieve character information
+**Note**: The application has been updated to use the new `/accounts/{account}/characters` endpoint. It automatically falls back to the deprecated `/my/characters` endpoint if account information cannot be retrieved.
+
+- `GET /my/details` - Retrieve account information including username
+- `GET /accounts/{account}/characters` - Retrieve character information (replaces deprecated `/my/characters`)
 - `POST /my/{character}/action/move` - Move character to coordinates
 - `POST /my/{character}/action/gathering` - Gather resources
 - `POST /my/{character}/action/fight` - Fight monsters

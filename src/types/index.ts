@@ -1,4 +1,16 @@
 // src/types/index.ts
+export interface Account {
+  username: string;
+  email: string;
+  subscribed: boolean;
+  status: string;
+  badges: any[];
+  gems: number;
+  achievements_points: number;
+  banned: boolean;
+  ban_reason: string;
+}
+
 export interface Character {
   name: string;
   hp: number;
